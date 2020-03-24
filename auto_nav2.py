@@ -198,6 +198,10 @@ def rotatebot(rot_angle):
         # get the sign to see if we can stop
         c_dir_diff = np.sign(c_change.imag)
         # rospy.loginfo(['c_change_dir: ' + str(c_change_dir) + ' c_dir_diff: ' + str(c_dir_diff)])
+        angle_to_go = abs(target_yaw - current_yaw)
+        twist.linear.x = 0.0
+        twist.angular.z = c_change_dir * rotate_speed * (angle_to_go/pi)
+        pub.publish(twist)
         rate.sleep()
 
     rospy.loginfo(['End Yaw: ' + str(math.degrees(current_yaw))])
@@ -315,7 +319,6 @@ def mover():
     global laser_range
 
     rospy.init_node('mover', anonymous=True)
-    
     tfBuffer = tf2_ros.Buffer()
     tfListener = tf2_ros.TransformListener(tfBuffer)
     rospy.sleep(1.0)
