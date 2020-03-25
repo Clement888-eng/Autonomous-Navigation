@@ -1,3 +1,5 @@
+#!/usr/bin/env python
+
 import rospy
 from nav_msgs.msg import Odometry
 from nav_msgs.msg import OccupancyGrid
@@ -9,21 +11,22 @@ import cmath
 import numpy as np
 import time
 import cv2
-from sound_play.msg import SoundRequest
-from sound_play.libsoundplay import SoundClient
+#from sound_play.msg import SoundRequest
+#from sound_play.libsoundplay import SoundClient
 import random
+from math import pi
 
 laser_range = np.array([])
 occdata = np.array([])
 yaw = 0.0
 rotate_speed = 0.1
-linear_speed = 0.1
+linear_speed = 0.5
 stop_distance = 0.25
 occ_bins = [-1, 0, 100, 101]
 front_angle = 30
 front_angles = range(-front_angle,front_angle+1,1)
-msg.info.width=0
-msg.info.height=0
+# msg.info.width=0
+# msg.info.height=0
 
 import rospy
 import numpy as np
@@ -36,6 +39,8 @@ import math
 
 # constants
 occ_bins = [-1, 0, 100, 101]
+width=0
+height=0
 
 # create global variables
 rotated = Image.fromarray(np.array(np.zeros((1,1))))
@@ -61,8 +66,8 @@ def get_laserscan(msg):
 
 def get_occupancy(msg):
     global occdata
-    global msg.info.width
-    global msg.info.height
+    # global msg.info.width
+    # global msg.info.height
     # create numpy array
     msgdata = np.array(msg.data)
     # compute histogram to identify percent of bins with -1
@@ -79,13 +84,16 @@ def get_occupancy(msg):
 
 def callback(msg, tfBuffer):
     global rotated
-
+    global width
+    global height
     # create numpy array
     occdata = np.array([msg.data])
     # compute histogram to identify percent of bins with -1
     occ_counts = np.histogram(occdata,occ_bins)
     # calculate total number of bins
     total_bins = msg.info.width * msg.info.height
+    width=msg.info.width
+    height=msg.info.height
     # log the info
     rospy.loginfo('Width: %i Height: %i',msg.info.width,msg.info.height)
     rospy.loginfo('Unmapped: %i Unoccupied: %i Occupied: %i Total: %i', occ_counts[0][0], occ_counts[0][1], occ_counts[0][2], total_bins)
@@ -203,10 +211,10 @@ def rotatebot(rot_angle):
         c_dir_diff = np.sign(c_change.imag)
         # rospy.loginfo(['c_change_dir: ' + str(c_change_dir) + ' c_dir_diff: ' + str(c_dir_diff)])
 
-        angle_to_go = abs(target_yaw - current_yaw)
-        twist.linear.x = 0.0
-        twist.angular.z = c_change_dir * rotate_speed * (angle_to_go/pi)
-        pub.publish(twist)
+        #angle_to_go = abs(target_yaw - current_yaw)
+        #twist.linear.x = 0.0
+        #twist.angular.z = c_change_dir * rotate_speed * (angle_to_go/pi)
+        #pub.publish(twist)
         rate.sleep()
 
     rospy.loginfo(['End Yaw: ' + str(math.degrees(current_yaw))])
@@ -216,11 +224,11 @@ def rotatebot(rot_angle):
     time.sleep(1)
     pub.publish(twist)
     
-def get_direction(rotated):
+def get_direction():
+    global rotated
     out=set()
-    global line
-    width=msg.info.width
-    height=msg.info.height
+    global width
+    global height
     line0=[0]
     line45=[45]
     line90=[90]
@@ -261,7 +269,7 @@ def get_direction(rotated):
         return random.choice(angle)
 
 def run():
-    while get_direction(rotated)==False:
+    while get_direction()==False:
         rotatebot(5)
     return get_direction(rotated)
     
@@ -272,7 +280,7 @@ def pick_direction():
 
     # publish to cmd_vel to move TurtleBot
     pub = rospy.Publisher('cmd_vel', Twist, queue_size=10)
-
+    lr2i = 0
     # stop moving
     twist = Twist()
     twist.linear.x = 0.0
@@ -284,17 +292,19 @@ def pick_direction():
     
     if laser_range.size != 0:
         # use nanargmax as there are nan's in laser_range added to replace 0's
-        lr2i = int(run())
+        while get_direction()==False:
+            rotatebot(5)
+        lr2i = int(get_direction())
+        rospy.loginfo(['Picked direction: ' + str(lr2i) + ' ' + str(laser_range[lr2i]) + ' m (should be running till here)'])
     else:
         lr2i = 0
 
-    rospy.loginfo(['Picked direction: ' + str(lr2i) + ' ' + str(laser_range[lr2i]) + ' m (should be running here)'])
 
     # rotate to that direction
     rotatebot(float(lr2i))
 
     # start moving
-    rospy.loginfo(['Start moving'])
+    rospy.loginfo(['Start moving !!!' , get_direction()])
     twist.linear.x = linear_speed
     twist.angular.z = 0.0
     # not sure if this is really necessary, but things seem to work more
@@ -374,6 +384,7 @@ def closure(mapdata):
 
 def mover():
     global laser_range
+    lri=[]
 
     #initialize node
     rospy.init_node('mover', anonymous=True)
