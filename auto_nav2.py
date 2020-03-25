@@ -210,11 +210,11 @@ def rotatebot(rot_angle):
         # get the sign to see if we can stop
         c_dir_diff = np.sign(c_change.imag)
         # rospy.loginfo(['c_change_dir: ' + str(c_change_dir) + ' c_dir_diff: ' + str(c_dir_diff)])
-
-        #angle_to_go = abs(target_yaw - current_yaw)
-        #twist.linear.x = 0.0
-        #twist.angular.z = c_change_dir * rotate_speed * (angle_to_go/pi)
-        #pub.publish(twist)
+        # slow down the rotation when current_yaw is close to target_yaw
+        angle_to_go = abs(target_yaw - current_yaw)
+        twist.linear.x = 0.0
+        twist.angular.z = c_change_dir * rotate_speed * (angle_to_go/pi)
+        pub.publish(twist)
         rate.sleep()
 
     rospy.loginfo(['End Yaw: ' + str(math.degrees(current_yaw))])
@@ -226,9 +226,12 @@ def rotatebot(rot_angle):
     
 def get_direction():
     global rotated
-    out=set()
     global width
     global height
+    out=set()
+    angle=[]
+    
+    # initialize list of each line
     line0=[0]
     line45=[45]
     line90=[90]
@@ -238,7 +241,8 @@ def get_direction():
     line_90=[-90]
     line_135=[-135]
     line=[line0,line45,line90,line135,line180,line_45,line_90,line_135]
-    angle=[]
+    
+    # get the map value from 0, 45, 90, 135, 180, -45, -90, -135 angle
     for i in range(1,int(min(width/2,height/2))):
             line0.append(rotated[height//2-i][width//2])
             line45.append(rotated[height//2-i][width//2+i])
@@ -248,6 +252,9 @@ def get_direction():
             line135.append(rotated[height//2+i][width//2+i])
             line180.append(rotated[height//2+i][width//2])
             line_135.append(rotated[height//2+i][width//2-i])
+            
+    # sort the list until the nearest unmapped area
+    # 0 is unmapped, 1 is unoccupied, occupied is > 1
     for x in range(8):
         for y in range(1,int(min(width/2,height/2))):
             if line[x][y]==0:
@@ -255,7 +262,12 @@ def get_direction():
                 break
             else:
                 continue
+                
+    # initialize all the possible value 
     ori={0,45,90,135,180,-45,-90,-135}
+    
+    # scan if any obstacle (value >1) before unmapped (0)
+    # return a list of possible angle to go
     for i in line:
         for j in range(1,len(i)):
             if i[j]>1 or i[j]!=0:
@@ -263,12 +275,17 @@ def get_direction():
             else:
                 continue
     angle=list(ori - out)
+    
+    # check if there is a possible direction
+    # if no possible direction, return False
+    # if yes, return a random angle to go
     if len(angle)==0:
         return False
     else:
         return random.choice(angle)
 
 def run():
+    # check if no direction to go, turn the robot 5 degrees to left until find something
     while get_direction()==False:
         rotatebot(5)
     return get_direction(rotated)
@@ -295,7 +312,7 @@ def pick_direction():
         while get_direction()==False:
             rotatebot(5)
         lr2i = int(get_direction())
-        rospy.loginfo(['Picked direction: ' + str(lr2i) + ' ' + str(laser_range[lr2i]) + ' m (should be running till here)'])
+        rospy.loginfo(['Picked direction: ' + str(lr2i) + ' ' + str(laser_range[lr2i]) + ' m (test)'])
     else:
         lr2i = 0
 
