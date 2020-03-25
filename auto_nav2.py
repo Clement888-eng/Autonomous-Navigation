@@ -11,6 +11,20 @@ import time
 import cv2
 from sound_play.msg import SoundRequest
 from sound_play.libsoundplay import SoundClient
+import random
+
+laser_range = np.array([])
+occdata = np.array([])
+yaw = 0.0
+rotate_speed = 0.1
+linear_speed = 0.1
+stop_distance = 0.25
+occ_bins = [-1, 0, 100, 101]
+front_angle = 30
+front_angles = range(-front_angle,front_angle+1,1)
+msg.info.width=0
+msg.info.height=0
+
 import rospy
 import numpy as np
 from nav_msgs.msg import OccupancyGrid
@@ -25,18 +39,6 @@ occ_bins = [-1, 0, 100, 101]
 
 # create global variables
 rotated = Image.fromarray(np.array(np.zeros((1,1))))
-
-
-laser_range = np.array([])
-occdata = np.array([])
-yaw = 0.0
-rotate_speed = 0.1
-linear_speed = 0.1
-stop_distance = 0.25
-occ_bins = [-1, 0, 100, 101]
-front_angle = 30
-front_angles = range(-front_angle,front_angle+1,1)
-
 
 def get_odom_dir(msg):
     global yaw
@@ -59,7 +61,8 @@ def get_laserscan(msg):
 
 def get_occupancy(msg):
     global occdata
-
+    global msg.info.width
+    global msg.info.height
     # create numpy array
     msgdata = np.array(msg.data)
     # compute histogram to identify percent of bins with -1
@@ -149,6 +152,7 @@ def callback(msg, tfBuffer):
     plt.pause(0.00000000001)
 
 
+
 def rotatebot(rot_angle):
     global yaw
 
@@ -198,6 +202,7 @@ def rotatebot(rot_angle):
         # get the sign to see if we can stop
         c_dir_diff = np.sign(c_change.imag)
         # rospy.loginfo(['c_change_dir: ' + str(c_change_dir) + ' c_dir_diff: ' + str(c_dir_diff)])
+
         angle_to_go = abs(target_yaw - current_yaw)
         twist.linear.x = 0.0
         twist.angular.z = c_change_dir * rotate_speed * (angle_to_go/pi)
@@ -210,6 +215,56 @@ def rotatebot(rot_angle):
     # stop the rotation
     time.sleep(1)
     pub.publish(twist)
+    
+def get_direction(rotated):
+    out=set()
+    global line
+    width=msg.info.width
+    height=msg.info.height
+    line0=[0]
+    line45=[45]
+    line90=[90]
+    line135=[135]
+    line180=[180]
+    line_45=[-45]
+    line_90=[-90]
+    line_135=[-135]
+    line=[line0,line45,line90,line135,line180,line_45,line_90,line_135]
+    angle=[]
+    for i in range(1,int(min(width/2,height/2))):
+            line0.append(rotated[height//2-i][width//2])
+            line45.append(rotated[height//2-i][width//2+i])
+            line90.append(rotated[height//2][width//2+i])
+            line_45.append(rotated[height//2-i][width//2-i])
+            line_90.append(rotated[height//2][width//2-i])
+            line135.append(rotated[height//2+i][width//2+i])
+            line180.append(rotated[height//2+i][width//2])
+            line_135.append(rotated[height//2+i][width//2-i])
+    for x in range(8):
+        for y in range(1,int(min(width/2,height/2))):
+            if line[x][y]==0:
+                line[x]=line[x][0:y+1]
+                break
+            else:
+                continue
+    ori={0,45,90,135,180,-45,-90,-135}
+    for i in line:
+        for j in range(1,len(i)):
+            if i[j]>1 or i[j]!=0:
+                out.add(i[0])
+            else:
+                continue
+    angle=list(ori - out)
+    if len(angle)==0:
+        return False
+    else:
+        return random.choice(angle)
+
+def run():
+    while get_direction(rotated)==False:
+        rotatebot(5)
+    return get_direction(rotated)
+    
 
 
 def pick_direction():
@@ -225,13 +280,15 @@ def pick_direction():
     time.sleep(1)
     pub.publish(twist)
 
+    #paste your code here
+    
     if laser_range.size != 0:
         # use nanargmax as there are nan's in laser_range added to replace 0's
-        lr2i = np.nanargmax(laser_range)
+        lr2i = int(run())
     else:
         lr2i = 0
 
-    rospy.loginfo(['Picked direction: ' + str(lr2i) + ' ' + str(laser_range[lr2i]) + ' m'])
+    rospy.loginfo(['Picked direction: ' + str(lr2i) + ' ' + str(laser_range[lr2i]) + ' m (should be running here)'])
 
     # rotate to that direction
     rotatebot(float(lr2i))
@@ -318,6 +375,7 @@ def closure(mapdata):
 def mover():
     global laser_range
 
+    #initialize node
     rospy.init_node('mover', anonymous=True)
     tfBuffer = tf2_ros.Buffer()
     tfListener = tf2_ros.TransformListener(tfBuffer)
@@ -384,3 +442,5 @@ if __name__ == '__main__':
         mover()
     except rospy.ROSInterruptException:
         pass
+
+ 
