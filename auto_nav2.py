@@ -401,7 +401,8 @@ def closure(mapdata):
 
 def mover():
     global laser_range
-    lri=[]
+    global front_angles
+    global stop_distance
 
     #initialize node
     rospy.init_node('mover', anonymous=True)
