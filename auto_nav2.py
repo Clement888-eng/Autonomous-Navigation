@@ -225,13 +225,13 @@ def get_direction():
     # get the map value from 0, 45, 90, 135, 180, -45, -90, -135 angle
     for i in range(1,int(min(width/2,height/2))):
             line0.append(rotate[height//2-i][width//2])
-            line45.append(rotate[height//2-i][width//2+i])
-            line90.append(rotate[height//2][width//2+i])
-            line_45.append(rotate[height//2-i][width//2-i])
-            line_90.append(rotate[height//2][width//2-i])
-            line135.append(rotate[height//2+i][width//2+i])
+            line45.append(rotate[height//2-i][width//2-i])
+            line90.append(rotate[height//2][width//2-i])
+            line_45.append(rotate[height//2-i][width//2+i])
+            line_90.append(rotate[height//2][width//2+i])
+            line135.append(rotate[height//2+i][width//2-i])
             line180.append(rotate[height//2+i][width//2])
-            line_135.append(rotate[height//2+i][width//2-i])
+            line_135.append(rotate[height//2+i][width//2+i])
             
     # sort the list until the nearest unmapped area
     # 0 is unmapped, 1 is unoccupied, occupied is > 1
