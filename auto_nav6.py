@@ -203,61 +203,71 @@ def rotatebot(rot_angle):
     time.sleep(1)
     pub.publish(twist)
 
+def movebot():
+    # publish to cmd_vel to move TurtleBot
+    pub = rospy.Publisher('cmd_vel', Twist, queue_size=10)
+
+    twist = Twist()
+    twist.linear.x = linear_speed
+    twist.angular.z = 0.0
+    time.sleep(1)
+    pub.publish(twist)
+
 def forward_left():
     j=0
     lst=[]
     for i in range(height//2):
-	    if im2arr[height//2-i][width//2]==1:
-		    lst.append(im2arr[height//2-i][width//2::-1])
-	    if im2arr[height//2-i][width//2]>1:
-		    break
+	if im2arr[height//2-i][width//2]==1:
+		lst.append(im2arr[height//2-i][width//2::-1])
+	if im2arr[height//2-i][width//2]>1:
+		break
     for x in range(len(lst)):
-	    for y in range(len(lst[0])):
-		    if lst[x][y]==0:
-			    lst[x]=lst[x][0:y+1]
-			    break
-		    else:
-			    continue
+	for y in range(len(lst[0])):
+		if lst[x][y]==0:
+			lst[x]=lst[x][0:y+1]
+			break
+		else:
+			continue
     for j in lst:
-	    for k in range(len(j)):
-		    if j[k]>1:
-			    j[k]=2
+	for k in range(len(j)):
+		if j[k]>1:
+			j[k]=2
     for z in range(len(lst)):
-	    if 0 in lst[z]:
-		    if 2 not in lst[z]:
-			    return ["L",z*resolution,(len(lst[z])-1)*resolution]
-		    else:
-			    continue
-	    else:
-		    continue
+	if 0 in lst[z]:
+		if 2 not in lst[z]:
+			return ["L",z*resolution,(len(lst[z])-1)*resolution]
+		else:
+			continue
+	else:
+		continue
 		
 def forward_right():
     j=0
     lst=[]
     for i in range(height//2):
-	    if im2arr[height//2-i][width//2]==1:
-		    lst.append(im2arr[height//2-i][width//2::])
-	    if im2arr[height//2-i][width//2]>1:
-		    break
+	if im2arr[height//2-i][width//2]==1:
+		lst.append(im2arr[height//2-i][width//2::])
+	if im2arr[height//2-i][width//2]>1:
+		break
     for x in range(len(lst)):
-	    for y in range(len(lst[0])):
-		    if lst[x][y]==0:
-			    lst[x]=lst[x][0:y+1]
-			    break
-		    else:
-			    continue
+	for y in range(len(lst[0])):
+		if lst[x][y]==0:
+			lst[x]=lst[x][0:y+1]
+			break
+		else:
+			continue
     for j in lst:
-	    for k in range(len(j)):
-		    if j[k]>1:
-			    j[k]=2
+	for k in range(len(j)):
+		if j[k]>1:
+			j[k]=2
     for z in range(len(lst)):
-	    if 0 in lst[z]:
-		    if 2 not in lst[z]:
-			    return ["R",z*resolution,(len(lst[z])-1)*resolution]
-		    else:
-			    continue
-	    else:
-		    continue
+	if 0 in lst[z]:
+		if 2 not in lst[z]:
+			return ["R",z*resolution,(len(lst[z])-1)*resolution]
+		else:
+			continue
+	else:
+		continue
 
 def movement(distance, accuracy):
     start=round(laser_range[0],2)
@@ -432,11 +442,11 @@ def mover():
                     f.write("Elapsed Time: " + str(time.time() - start_time))
                 timeWritten = 1
                 # play a sound
-                soundhandle = SoundClient()
-                rospy.sleep(1)
-                soundhandle.stopAll()
-                soundhandle.play(SoundRequest.NEEDS_UNPLUGGING)
-                rospy.sleep(2)
+                # soundhandle = SoundClient()
+                # rospy.sleep(1)
+                # soundhandle.stopAll()
+                # soundhandle.play(SoundRequest.NEEDS_UNPLUGGING)
+                # rospy.sleep(2)
                 # save the map
                 cv2.imwrite('mazemap.png',occdata)
 
