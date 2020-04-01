@@ -12,10 +12,10 @@ import numpy as np
 import time
 import cv2
 import tf2_ros
-from sound_play.msg import SoundRequest
-from sound_play.libsoundplay import SoundClient
+#from sound_play.msg import SoundRequest
+#from sound_play.libsoundplay import SoundClient
 from PIL import Image
-import random
+#import random
 
 laser_range = np.array([])
 occdata = np.array([])
@@ -23,7 +23,7 @@ yaw = 0.0
 rotate_speed = 0.22
 linear_speed = 0.22
 stop_distance = 0.2
-accuracy = 0.1
+accuracy = 0.2
 resolution = 0
 occ_bins = [-1, 0, 100, 101]
 front_angle = 30
@@ -71,8 +71,6 @@ def get_occupancy(msg):
 def callback(msg, tfBuffer):
     global occdata
     global im2arr
-    global i_centerx
-    global i_centery
     global width
     global height
     global resolution
@@ -113,7 +111,10 @@ def callback(msg, tfBuffer):
     # reshape to 2D array using column order
     odata = np.uint8(oc3.reshape(msg.info.height,msg.info.width,order='F'))
     # set current robot location to 0
-    odata[grid_x][grid_y] = 0
+    if len(odata)>1:
+	odata[grid_x][grid_y] = 0
+    else:
+	odata
     # create image from 2D array using PIL
     img = Image.fromarray(odata.astype(np.uint8))
     # find center of image
@@ -214,60 +215,62 @@ def movebot():
     pub.publish(twist)
 
 def forward_left():
+    print('forward_left is running')
     j=0
     lst=[]
+    out=[]
     for i in range(height//2):
-	if im2arr[height//2-i][width//2]==1:
-		lst.append(im2arr[height//2-i][width//2::-1])
-	if im2arr[height//2-i][width//2]>1:
-		break
+        if im2arr[height//2-i][width//2]==1:
+                lst.append(im2arr[height//2-i][width//2::-1])
+        if im2arr[height//2-i][width//2]>1:
+                break
     for x in range(len(lst)):
-	for y in range(len(lst[0])):
-		if lst[x][y]==0:
-			lst[x]=lst[x][0:y+1]
-			break
-		else:
-			continue
+        for y in range(len(lst[0])):
+                if lst[x][y]==0:
+                        lst[x]=lst[x][0:y+1]
+                        break
+                else:
+                        continue
     for j in lst:
-	for k in range(len(j)):
-		if j[k]>1:
-			j[k]=2
-    for z in range(len(lst)):
-	if 0 in lst[z]:
-		if 2 not in lst[z]:
-			return ["L",z*resolution,(len(lst[z])-1)*resolution]
-		else:
-			continue
-	else:
-		continue
+        out.append(list(map(lambda x:2 if x>1 else x,j)))
+    for z in range(len(out)):
+        if 0 in out[z]:
+                if 2 not in out[z]:
+                        return ["L",z*resolution,(len(out[z])-1)*resolution]
+                else:
+                        continue
+        else:
+                continue
+    return False
 		
 def forward_right():
+    print('forward_right is running')
     j=0
     lst=[]
+    out=[]
     for i in range(height//2):
-	if im2arr[height//2-i][width//2]==1:
-		lst.append(im2arr[height//2-i][width//2::])
-	if im2arr[height//2-i][width//2]>1:
-		break
+        if im2arr[height//2-i][width//2]==1:
+                lst.append(im2arr[height//2-i][width//2::])
+        if im2arr[height//2-i][width//2]>1:
+                break
     for x in range(len(lst)):
-	for y in range(len(lst[0])):
-		if lst[x][y]==0:
-			lst[x]=lst[x][0:y+1]
-			break
-		else:
-			continue
+        for y in range(len(lst[0])):
+                if lst[x][y]==0:
+                        lst[x]=lst[x][0:y+1]
+                        break
+                else:
+                        continue
     for j in lst:
-	for k in range(len(j)):
-		if j[k]>1:
-			j[k]=2
-    for z in range(len(lst)):
-	if 0 in lst[z]:
-		if 2 not in lst[z]:
-			return ["R",z*resolution,(len(lst[z])-1)*resolution]
-		else:
-			continue
-	else:
-		continue
+        out.append(list(map(lambda x:2 if x>1 else x,j)))
+    for z in range(len(out)):
+        if 0 in out[z]:
+                if 2 not in out[z]:
+                        return ["R",z*resolution,(len(out[z])-1)*resolution]
+                else:
+                        continue
+        else:
+                continue
+    return False
 
 def movement(distance, accuracy):
     start=round(laser_range[0],2)
@@ -277,19 +280,20 @@ def movement(distance, accuracy):
     stopbot()
 
 def move():
+    print('move() is running')
     right=forward_right()
-	left=forward_left()
-	if len(right)!=0:
-		move(right[1])
-		rotatebot(90)
-		move(right[2])
+    left=forward_left()
+    if right!=False:
+        move(right[1])
+	rotatebot(90)
+	move(right[2])
+    else:
+	if left!=False:
+            move(left[1])
+	    rotatebot(-90)
+	    move(left[2])
 	else:
-		if len(left)!=0:
-			move(left[1])
-			rotatebot(-90)
-			move(left[2])
-		else:
-			rotatebot(30)
+            rotatebot(30)
     
 def pick_direction():
     global laser_range
@@ -414,8 +418,9 @@ def mover():
 
     # find direction with the largest distance from the Lidar,
     # rotate to that direction, and start moving
-
-    pick_direction()
+    rospy.loginfo('try moving 0.5m')
+    movement(0.5,accuraccy)
+    move()
 
     while not rospy.is_shutdown():
         if laser_range.size != 0:
@@ -432,7 +437,7 @@ def mover():
             # find direction with the largest distance from the Lidar
             # rotate to that direction
             # start moving
-            pick_direction()
+            move()
 
         # check if SLAM map is complete
         if timeWritten :
