@@ -300,13 +300,16 @@ def move():
         movement(right[1],accuracy)
 	rotatebot(90)
 	movement(right[2],accuracy)
+	move()
     else:
 	if left!=False:
             movement(left[1],accuracy)
 	    rotatebot(-90)
 	    movement(left[2],accuracy)
+	    move()
 	else:
             rotatebot(30)
+	    move()
     
 def pick_direction():
     global laser_range
