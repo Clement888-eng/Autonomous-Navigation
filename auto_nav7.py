@@ -23,7 +23,7 @@ yaw = 0.0
 rotate_speed = 0.22
 linear_speed = 0.4
 stop_distance = 0.1
-accuracy = 0.3
+accuracy = 0.2
 resolution = 0
 occ_bins = [-1, 0, 100, 101]
 front_angle = 30
@@ -211,12 +211,15 @@ def rotatebot(rot_angle):
 def movebot():
     # publish to cmd_vel to move TurtleBot
     pub = rospy.Publisher('cmd_vel', Twist, queue_size=10)
-
-    twist = Twist()
-    twist.linear.x = linear_speed
-    twist.angular.z = 0.0
-    time.sleep(1)
-    pub.publish(twist)
+    while laser_range[0]>stop_distance:
+	twist = Twist()
+    	twist.linear.x = linear_speed
+    	twist.angular.z = 0.0
+    	time.sleep(1)
+    	pub.publish(twist)
+    stopbot()
+    
+        
 
 def forward_left():
     #rospy.loginfo(['forward_left is running'])
@@ -279,16 +282,14 @@ def forward_right():
     return False
 
 def movement(distance, accuracy):
-    while laser_range[0]>stop_distance:
-        if len(laser_range)>0:
-            start=round(laser_range[0],2)
-            end=round(laser_range[0],2)-distance
-            while abs(laser_range[0]-end)>=accuracy:
-                movebot()
-                stopbot()
-        else:
+    if len(laser_range)>0:
+        start=round(laser_range[0],2)
+        end=round(laser_range[0],2)-distance
+        while abs(laser_range[0]-end)>=accuracy:
             movebot()
-    stopbot()
+	stopbot()
+    else:
+        movebot()
     
 
 def move():
@@ -297,12 +298,14 @@ def move():
     right=forward_right()
     left=forward_left()
     if right!=False:
+	rospy.loginfo(['Right target locked ! Moving !!'])
         movement(right[1],accuracy)
 	rotatebot(90)
 	movement(right[2],accuracy)
 	move()
     else:
 	if left!=False:
+	    rospy.loginfo(['Left target locked ! Moving !!'])
             movement(left[1],accuracy)
 	    rotatebot(-90)
 	    movement(left[2],accuracy)
@@ -344,9 +347,6 @@ def pick_direction():
     # time.sleep(1)
     # pub.publish(twist)
 
-
-
-
 def stopbot():
     # publish to cmd_vel to move TurtleBot
     pub = rospy.Publisher('cmd_vel', Twist, queue_size=10)
@@ -354,7 +354,7 @@ def stopbot():
     twist = Twist()
     twist.linear.x = 0.0
     twist.angular.z = 0.0
-    time.sleep(1)
+    time.sleep(0.2)
     pub.publish(twist)
 
 
@@ -434,8 +434,8 @@ def mover():
 
     # find direction with the largest distance from the Lidar,
     # rotate to that direction, and start moving
-    rospy.loginfo('try moving 0.5m')
-    movement(0.5,accuracy)
+    rospy.loginfo('try moving 0.3m')
+    movement(0.3,accuracy)
 
     while not rospy.is_shutdown():
         if laser_range.size != 0:
