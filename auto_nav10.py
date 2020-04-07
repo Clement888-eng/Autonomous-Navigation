@@ -218,7 +218,7 @@ def movebot():
     while laser_range[0] > stop_distance:
         twist = Twist()
         twist.linear.x = linear_speed
-        twist.angular.z = -0.1
+        twist.angular.z = 0.0
         time.sleep(1)
         pub.publish(twist)
     stopbot()
