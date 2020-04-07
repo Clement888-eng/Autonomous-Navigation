@@ -218,7 +218,7 @@ def movebot():
     while laser_range[0] > stop_distance:
         twist = Twist()
         twist.linear.x = linear_speed
-        twist.angular.z = -0.2
+        twist.angular.z = 0.0
         time.sleep(1)
         pub.publish(twist)
     stopbot()
@@ -437,11 +437,11 @@ def mover():
     rospy.loginfo(['finished turning 0'])
 
     # try stopping distance and moving straight
-    while laser_range[0]>stop_distance:
-        movebot()
-    stopbot()
-    rospy.loginfo(['remaining distance', laser_range[0]])
-    rospy.loginfo(['stop distance = ', stop_distance])
+    # while laser_range[0]>stop_distance:
+    #    movebot()
+    # stopbot()
+    # rospy.loginfo(['remaining distance', laser_range[0]])
+    # rospy.loginfo(['stop distance = ', stop_distance])
 
     while not rospy.is_shutdown():
         if laser_range.size != 0:
