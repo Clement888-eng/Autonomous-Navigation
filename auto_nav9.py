@@ -430,12 +430,18 @@ def mover():
 
     # find direction with the largest distance from the Lidar,
     # rotate to that direction, and start moving
+
+    # accurate turning
     rotatebot(0)
     rospy.loginfo(['len laser range',len(laser_range)])
     rospy.loginfo(['finished turning 0'])
+
+    # try stopping distance and moving straight
     while laser_range[0]>stop_distance:
         movebot()
     stopbot()
+    rospy.loginfo(['remaining distance', laser_range[0]])
+    rospy.loginfo(['stop distance = ', stop_distance])
 
     while not rospy.is_shutdown():
         if laser_range.size != 0:
@@ -469,7 +475,7 @@ def mover():
                 # rospy.sleep(1)
                 # soundhandle.stopAll()
                 # soundhandle.play(SoundRequest.NEEDS_UNPLUGGING)
-                # rospy.sleep(2)
+                rospy.sleep(2)
                 # save the map
                 cv2.imwrite('mazemap.png',occdata)
 
