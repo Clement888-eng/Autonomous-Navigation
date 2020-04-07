@@ -23,7 +23,7 @@ occdata = np.array([])
 yaw = 0.0
 rotate_speed = 0.6
 linear_speed = 0.5
-stop_distance = 0.6
+stop_distance = 0.2
 accuracy = 0.3
 resolution = 0
 occ_bins = [-1, 0, 100, 101]
@@ -284,7 +284,7 @@ def pick_direction():
     # rospy.loginfo(['Start moving !!!' , get_direction()])
     while laser_range[0]>stop_distance:
         twist.linear.x = linear_speed
-        twist.angular.z = -0.05
+        twist.angular.z = 0.0
         # not sure if this is really necessary, but things seem to work more
         # reliably with this
         time.sleep(1)
