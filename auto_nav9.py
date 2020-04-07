@@ -12,6 +12,7 @@ import numpy as np
 import time
 import cv2
 import tf2_ros
+from math import pi
 #from sound_play.msg import SoundRequest
 #from sound_play.libsoundplay import SoundClient
 from PIL import Image
@@ -20,9 +21,9 @@ from PIL import Image
 laser_range = np.array([])
 occdata = np.array([])
 yaw = 0.0
-rotate_speed = 0.22
-linear_speed = 0.4
-stop_distance = 0.1
+rotate_speed = 0.6
+linear_speed = 0.3
+stop_distance = 0.7
 accuracy = 0.3
 resolution = 0
 occ_bins = [-1, 0, 100, 101]
@@ -100,8 +101,8 @@ def callback(msg, tfBuffer):
     # get map origin struct has fields of x, y, and z
     map_origin = msg.info.origin.position
     # get map grid positions for x, y position
-    grid_x = round((cur_pos.x - map_origin.x) / map_res)
-    grid_y = round(((cur_pos.y - map_origin.y) / map_res))
+    grid_x = int(round((cur_pos.x - map_origin.x) / map_res))
+    grid_y = int(round((cur_pos.y - map_origin.y) / map_res))
     rospy.loginfo(['Grid Y: ' + str(grid_y) + ' Grid X: ' + str(grid_x)])
 
     # make occdata go from 0 instead of -1, reshape into 2D
@@ -111,10 +112,9 @@ def callback(msg, tfBuffer):
     # reshape to 2D array using column order
     odata = np.uint8(oc3.reshape(msg.info.height,msg.info.width,order='F'))
     # set current robot location to 0
+    rospy.loginfo(['len odata is',len(odata)])
     if len(odata)>1:
-	odata[grid_x][grid_y] = 0
-    else:
-	odata
+        odata[grid_x][grid_y] = 0
     # create image from 2D array using PIL
     img = Image.fromarray(odata.astype(np.uint8))
     # find center of image
@@ -195,12 +195,17 @@ def rotatebot(rot_angle):
         # get the sign to see if we can stop
         c_dir_diff = np.sign(c_change.imag)
         # rospy.loginfo(['c_change_dir: ' + str(c_change_dir) + ' c_dir_diff: ' + str(c_dir_diff)])
+        rospy.loginfo(['test'])
+        angle_to_go = abs(target_yaw - current_yaw)
         twist.linear.x = 0.0
-        twist.angular.z = rotate_speed * 0.2
+        twist.angular.z = c_change_dir * rotate_speed * (angle_to_go/pi)
         pub.publish(twist)
         rate.sleep()
+        if math.degrees(target_yaw)-10<=math.degrees(current_yaw)<=math.degrees(target_yaw)+10:
+            break
 
     rospy.loginfo(['End Yaw: ' + str(math.degrees(current_yaw))])
+    rospy.loginfo(['exits loop'])
     # set the rotation speed to 0
     twist.angular.z = 0.0
     # stop the rotation
@@ -213,7 +218,7 @@ def movebot():
     while laser_range[0] > stop_distance:
         twist = Twist()
         twist.linear.x = linear_speed
-        twist.angular.z = 0.0
+        twist.angular.z = -0.2
         time.sleep(1)
         pub.publish(twist)
     stopbot()
@@ -306,12 +311,12 @@ def move():
     left=forward_left()
     if right!=False:
         movement(right[1],accuracy)
-	rotatebot(90)
+	rotatebot(-90)
 	movement(right[2],accuracy)
     else:
 	if left!=False:
             movement(left[1],accuracy)
-	    rotatebot(-90)
+	    rotatebot(90)
 	    movement(left[2],accuracy)
 	else:
             rotatebot(30)
@@ -425,15 +430,21 @@ def mover():
 
     # find direction with the largest distance from the Lidar,
     # rotate to that direction, and start moving
-    rospy.loginfo(['turning right'])
-    rotatebot(90)
+    rotatebot(0)
+    rospy.loginfo(['len laser range',len(laser_range)])
+    rospy.loginfo(['finished turning 0'])
+    while laser_range[0]>stop_distance:
+        movebot()
+    stopbot()
 
     while not rospy.is_shutdown():
         if laser_range.size != 0:
             # check distances in front of TurtleBot and find values less
             # than stop_distance
             lri = (laser_range[front_angles]<float(stop_distance)).nonzero()
-            rospy.loginfo('Distances: %s', str(lri))
+            rospy.loginfo('Distancessssssss: %s', str(lri))
+            rospy.loginfo(['move!'])
+            move()
         else:
             lri[0] = []
 
@@ -443,6 +454,7 @@ def mover():
             # find direction with the largest distance from the Lidar
             # rotate to that direction
             # start moving
+            rospy.loginfo(['running our function'])
             move()
 
         # check if SLAM map is complete
