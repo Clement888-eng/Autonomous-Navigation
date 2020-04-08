@@ -271,6 +271,7 @@ def pick_direction():
             lr2i=int(90-left.index(max(left)))
         else:
             rotatebot(-30)
+            pick_direction()
     else:
         lr2i = 0
         
