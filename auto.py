@@ -386,6 +386,7 @@ def mover():
             # find direction with the largest distance from the Lidar
             # rotate to that direction
             # start moving
+            rospy.loginfo(['Function running'])
             pick_direction()
 
         # check if SLAM map is complete
@@ -400,7 +401,7 @@ def mover():
                 # rospy.sleep(1)
                 # soundhandle.stopAll()
                 # soundhandle.play(SoundRequest.NEEDS_UNPLUGGING)
-                # rospy.sleep(2)
+                rospy.sleep(2)
                 # save the map
                 cv2.imwrite('mazemap.png',occdata)
 
