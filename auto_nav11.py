@@ -21,8 +21,8 @@ from PIL import Image
 laser_range = np.array([])
 occdata = np.array([])
 yaw = 0.0
-rotate_speed = 0.6
-linear_speed = 0.5
+rotate_speed = 0.2
+linear_speed = 0.2
 stop_distance = 0.25
 accuracy = 0.1
 resolution = 0
@@ -196,12 +196,12 @@ def rotatebot(rot_angle):
         c_dir_diff = np.sign(c_change.imag)
         # rospy.loginfo(['c_change_dir: ' + str(c_change_dir) + ' c_dir_diff: ' + str(c_dir_diff)])
         rospy.loginfo(['test'])
-        angle_to_go = abs(target_yaw - current_yaw)
-        twist.linear.x = 0.0
-        twist.angular.z = c_change_dir * rotate_speed * (angle_to_go/pi)
-        pub.publish(twist)
-        rate.sleep()
-        if abs(math.degrees(target_yaw)-math.degrees(current_yaw))<=10:
+        #angle_to_go = abs(target_yaw - current_yaw)
+        #twist.linear.x = 0.0
+        #twist.angular.z = c_change_dir * rotate_speed * (angle_to_go/pi)
+        #pub.publish(twist)
+        #rate.sleep()
+        if math.degrees(target_yaw)-10<=math.degrees(current_yaw)<=math.degrees(target_yaw)+10:
             break
 
     rospy.loginfo(['End Yaw: ' + str(math.degrees(current_yaw))])
@@ -218,7 +218,7 @@ def movebot():
     while laser_range[0] > stop_distance:
         twist = Twist()
         twist.linear.x = linear_speed
-        twist.angular.z = -0.1
+        twist.angular.z = 0.0
         time.sleep(1)
         pub.publish(twist)
     stopbot()
@@ -284,7 +284,7 @@ def pick_direction():
     # rospy.loginfo(['Start moving !!!' , get_direction()])
     while laser_range[0]>stop_distance:
         twist.linear.x = linear_speed
-        twist.angular.z = -0.05
+        twist.angular.z = 0.0
         # not sure if this is really necessary, but things seem to work more
         # reliably with this
         time.sleep(1)
