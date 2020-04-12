@@ -13,6 +13,7 @@ import time
 import cv2
 import tf2_ros
 from math import pi
+from math import atan
 #from sound_play.msg import SoundRequest
 #from sound_play.libsoundplay import SoundClient
 from PIL import Image
@@ -289,13 +290,9 @@ def move():
         rospy.loginfo(['Target not found, try turning...'])
         rotatebot(20)
         move()
-    else:
-        rospy.loginfo(['Target found, running pick_direction now'])
-        return True
-    
+ 
 def pick_direction():
     global laser_range
-
     # publish to cmd_vel to move TurtleBot
     pub = rospy.Publisher('cmd_vel', Twist, queue_size=10)
     lr2i = 0
@@ -310,7 +307,11 @@ def pick_direction():
     
     if laser_range.size != 0:
         move()
-        lr2i = 0
+        if forward_right()!=False:
+		lri = laser_range.index(max(laser_range[0:20]))
+	elif forward_left()!=False:
+                lri = laser_range.index(max(laser_range[340:360]))
+		
     else:
         lr2i = 0
 
