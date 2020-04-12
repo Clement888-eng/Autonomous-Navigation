@@ -309,8 +309,10 @@ def pick_direction():
         move()
         if forward_right()!=False:
 		lri = laser_range.index(max(laser_range[0:20]))
+		rospy.loginfo(['Turning ', lri])
 	elif forward_left()!=False:
                 lri = laser_range.index(max(laser_range[340:360]))
+		rospy.loginfo(['Turning ', lri])
 		
     else:
         lr2i = 0
