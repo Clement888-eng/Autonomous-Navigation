@@ -20,10 +20,11 @@ from PIL import Image
 
 laser_range = np.array([])
 occdata = np.array([])
+im2arr=[]
 yaw = 0.0
 rotate_speed = 0.1
-linear_speed = 0.1
-stop_distance = 0.4
+linear_speed = 0.15
+stop_distance = 0.5
 accuracy = 0.3
 resolution = 0
 occ_bins = [-1, 0, 100, 101]
@@ -302,7 +303,7 @@ def pick_direction():
     twist = Twist()
     twist.linear.x = 0.0
     twist.angular.z = 0.0
-    time.sleep(1)
+    time.sleep(0.1)
     pub.publish(twist)
 
     #paste your code here
@@ -318,7 +319,7 @@ def pick_direction():
     rotatebot(float(lr2i))
 
     # start moving
-    rospy.loginfo(['Start moving !!!' , get_direction()])
+    rospy.loginfo(['Start moving !!!'])
     twist.linear.x = linear_speed
     twist.angular.z = 0.0
     # not sure if this is really necessary, but things seem to work more
