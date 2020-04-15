@@ -231,6 +231,7 @@ def pick_direction():
     global lr2i
     # publish to cmd_vel to move TurtleBot
     pub = rospy.Publisher('cmd_vel', Twist, queue_size=10)
+    laser = list(laser_range)
 
     # stop moving
     twist = Twist()
@@ -249,11 +250,11 @@ def pick_direction():
     
     #paste your code here
     if laser_range.size != 0:
-        left = laser_range[0:91]
-        right = laser_range[len(laser_range):-91:-1]
-        max_left = int(np.where(left == max(left))[0][0])
-        max_right = int(np.where(laser_range == max(laser_range[len(laser_range):-91:-1]))[0][0]) - 360
-        if laser_range[max_left]>laser_range[max_right]:
+        left = laser[0:91]
+        right = laser[:-91:-1]
+        max_left = left.index(max(left))
+        max_right = 0 - right.index(max(right)) - 1
+        if laser[max_left]>laser[max_right]:
             lr2i = max_left
         else:
             lr2i = max_right
